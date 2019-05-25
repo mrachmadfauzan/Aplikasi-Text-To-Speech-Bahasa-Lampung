@@ -9,10 +9,18 @@ package beans;
  *
  * @author USER
  */
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+
 import java.sql.DriverManager;
 import java.sql.Connection;
 import java.sql.Statement;
 import java.sql.ResultSet;
+import java.util.Arrays;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 public class LampungText {
      // Menyiapkan paramter JDBC untuk koneksi ke datbase
@@ -20,45 +28,74 @@ public class LampungText {
     static final String DB_URL = "jdbc:mysql://localhost/text_to_speech";
     static final String USER = "root";
     static final String PASS = "";
-    
-    // Menyiapkan objek yang diperlukan untuk mengelola database
+
     static Connection conn;
     static Statement stmt;
     static ResultSet rs;
+
+    static InputStreamReader inputStreamReader = new InputStreamReader(System.in);
+    static BufferedReader input = new BufferedReader(inputStreamReader);
     
  public static void main(String[] args) {
         // Melakukan koneksi ke database
         // harus dibungkus dalam blok try/catch
         try {
-            // register driver yang akan dipakai
-            Class.forName(JDBC_DRIVER);
-            
-            // buat koneksi ke database
-            conn = DriverManager.getConnection(DB_URL, USER, PASS);
-            
-            // buat objek statement
-            stmt = conn.createStatement();
-            
-            // buat query ke database
-            String sql = "SELECT * FROM text";
-            
-            // eksekusi query dan simpan hasilnya di obj ResultSet
-            rs = stmt.executeQuery(sql);
-            
-    // tampilkan hasil query
-            while(rs.next()){
-                System.out.println("ID Kata: " + rs.getInt("id_kata"));
-                System.out.println("Kata: " + rs.getString("kata"));
-                System.out.println("Diphone: " + rs.getString("diphone"));
-            }
-            
-            stmt.close();
-            conn.close();
-            
-        } catch (Exception e) {
-            e.printStackTrace();
+        // register driver
+        Class.forName(JDBC_DRIVER);
+
+        conn = DriverManager.getConnection(DB_URL, USER, PASS);
+        stmt = conn.createStatement();
+
+        while (!conn.isClosed()) {
+            inputKata();
         }
 
+        stmt.close();
+        conn.close();
+
+    } catch (Exception e) {
+        e.printStackTrace();
     }
-    
+
 }
+ static void inputKata() {
+     
+      
+    try {
+        // ambil input dari user
+         System.out.print("kata: ");
+        String kata = input.readLine().trim();
+        System.out.print("diphone: ");
+        IntStream diphone = kata.chars();
+              
+        // query simpan
+        for (int i = 0; i < kata.length(); i++) {
+            if(i==0){
+             //    System.out.print(Stream.of(kata) .map(w -> w.split("")) .flatMap(Arrays::stream) .distinct() .collect(Collectors.toList()));
+             System.out.print("_/"+kata.charAt(i)+"//"+kata.charAt(i)+"/"+kata.charAt(i+1)+"//"); 
+             
+            }else if(i==kata.length()-1){
+                System.out.print(kata.charAt(i)+"/_");
+            }else{
+                System.out.print(kata.charAt(i)+"/"+kata.charAt(i+1)+"//");
+                break;
+            }
+        }
+        String sql = "INSERT INTO text (kata, diphone) VALUE('%s', '%s')";
+        sql = String.format(sql, kata, diphone);
+     
+        
+        // simpan kata
+        stmt.execute(sql);
+        
+        
+    } catch (Exception e) {
+        e.printStackTrace();
+        
+    }  
+    
+   }
+
+  
+}
+  
